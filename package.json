@@ -1,0 +1,10 @@
+{
+  "name": "infinite-scroll",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=4.0.0"
+  },
+  "devDependencies": {
+  }
+}
