@@ -68,7 +68,7 @@ scope.InfiniteScrollerSource.prototype = {
  * @param {InfiniteScrollerSource} source A provider of the content to be
  *     displayed in the infinite scroll region.
  */
-function InfiniteScroller(scroller, source) {
+scope.InfiniteScroller = function(scroller, source) {
   this.anchorItem = {index: 0, offset: 0};
   this.firstAttachedItem_ = 0;
   this.lastAttachedItem_ = 0;
@@ -99,7 +99,7 @@ function InfiniteScroller(scroller, source) {
   this.onResize_();
 }
 
-InfiniteScroller.prototype = {
+scope.InfiniteScroller.prototype = {
 
   /**
    * Called when the browser window resizes to adapt to new scroller bounds and
