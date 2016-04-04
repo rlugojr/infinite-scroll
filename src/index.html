@@ -136,6 +136,8 @@ ContentSource.prototype = {
     }
     if(item.self) {
       div.classList.add('from-me');
+    } else {
+      div.classList.remove('from-me');
     }
     return div;
   },
