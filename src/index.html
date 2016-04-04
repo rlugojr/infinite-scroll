@@ -24,8 +24,183 @@ limitations under the License.
   <meta name="author" content="Paul Lewis" />
   <meta name="viewport" content="width=device-width">
   <title>Infinite Scroll</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: none;
+    }
+    body {
+      background-color: #ddd;
+    }
+    #viewport {
+      overflow-x: hidden;
+      overflow-y: scroll;
+      -webkit-overflow-scrolling: touch;
+      width: 100%;
+      height: 100%;
+      position: absolute;
+    }
+    #templates {
+      display: none;
+    }
+    .message {
+      box-sizing: border-box;
+      width: 100%;
+      will-change: transform;
+      transform-origin: 0 0;
+      padding: 5px 15px;
+    }
+
+    .message .name {
+      margin-bottom: 5px;
+    }
+
+    .container {
+      background-color: white;
+      border: 2px solid gray;
+      border-radius: 5px;
+      padding: 5px;
+      /* box-shadow: 5px 5px 3px #888888; */
+    }
+
+    .message.tombstone .name {
+      width: 150px;
+      height: 5px;
+      margin-top: 10px;
+      margin-bottom: 15px;
+      background-color: gray;
+    }
+
+    .message.tombstone .text {
+      width: 300px;
+      height: 5px;
+      margin-top: 5px;
+      margin-bottom: 5px;
+      background-color: gray;
+    }
+
+    .container > img {
+      /* Don't put dynamically sized images in this. We wouldn't detect when
+       * those images have loaded. */
+      width: 200px;
+      height: 200px;
+    }
+
+    .message .hidden {
+      display: none;
+    }
+  </style>
 </head>
 <body>
+  <div id="templates">
+    <div class="message">
+      <div class="container">
+        <div class="name"></div>
+        <div class="text"></div>
+        <img>
+      </div>
+    </div>
+    <div class="message tombstone">
+      <div class="container">
+        <div class="name"></div>
+        <div class="text"></div>
+        <div class="text"></div>
+        <div class="text"></div>
+        <div class="block"></div>
+      </div>
+    </div>
+  </div>
+  <div id="viewport">
+  </div>
   <script src="scripts/infinite-scroll.js"></script>
+  <script>
+
+var NAMES = ['Joe', 'Bob', 'Rick', 'Ian', 'Rob', 'Terry', 'Linda', 'Jill', 'Mary', 'Sandra'];
+var IMAGES = [
+    'https://i.ytimg.com/vi/tntOCGkgt98/maxresdefault.jpg',
+    'https://pbs.twimg.com/profile_images/378800000532546226/dbe5f0727b69487016ffd67a6689e75a.jpeg',
+    'http://i2.cdn.turner.com/cnnnext/dam/assets/150324154025-14-internet-cats-restricted-super-169.jpeg',
+    'http://ichef-1.bbci.co.uk/news/1024/cpsprodpb/15664/production/_86825678_cats9.png',
+    'https://pbs.twimg.com/profile_images/424484505915621376/EOwsjaMZ_400x400.png',
+    'https://media.giphy.com/media/evAe2zNwDqamA/giphy.gif',
+];
+var MESSAGES = [
+    'Having a great day!',
+    'Check out this awesome toast I\'m eating',
+    'Hang in there, you',
+    'These are great socks. They\'re not new or anything; I just cleaned them. They\'re still wet, though.',
+    'Hello, I am a Nigerian Prince...',
+    'This is a test of an infinite scroller pattern. DOM nodes should be recycled with ' +
+    'content as you scroll down the page. This longer message should serve to create a ' +
+    'taller item in the list',];
+
+/**
+ * Constructs a random item with a given id.
+ * @param {number} id An identifier for the item.
+ * @return {Object} A randomly generated item.
+ */
+function getItem(id) {
+  function pickRandom(a) {
+      return a[Math.floor(Math.random() * a.length)];
+  }
+
+  return {
+      'id': id,
+      'name': pickRandom(NAMES),
+      'image': Math.random() < 1.0 / 20 ? pickRandom(IMAGES) : '',
+      'message': pickRandom(MESSAGES)};
+}
+
+function ContentSource() {
+  // Collect template nodes to be cloned when needed.
+  this.tombstone_ = document.querySelector("#templates > .message.tombstone");
+  this.messageTemplate_ = document.querySelector("#templates > .message");
+  this.nextItem_ = 0;
+}
+
+ContentSource.prototype = {
+  fetch: function(count) {
+    // Fetch at least 30 or count more objects for display.
+    count = Math.max(30, count);
+    return new Promise(function(resolve, reject) {
+      // Assume 50 ms per item.
+      setTimeout(function() {
+        var items = [];
+        for (var i = 0; i < Math.abs(count); i++) {
+          items[i] = getItem(this.nextItem_++);
+        }
+        resolve(items);
+      }, 1000 /* Simulated 1 second round trip time */ );
+    });
+  },
+
+  createTombstone: function() {
+    return this.tombstone_.cloneNode(true);
+  },
+
+  render: function(item, div) {
+    // TODO: Different style?
+    div = div || this.messageTemplate_.cloneNode(true);
+    div.querySelector('.name').textContent = item.name;
+    div.querySelector('.text').textContent = item.message;
+    var img = div.querySelector('img');
+    if (item.image) {
+      img.src = item.image;
+      img.classList.remove('hidden');
+    } else {
+      img.classList.add('hidden');
+    }
+    return div;
+  },
+
+};
+
+
+document.addEventListener('DOMContentLoaded', function() {
+  window.scroller = new InfiniteScroller(document.getElementById('viewport'),
+                                         new ContentSource());
+});
+  </script>
 </body>
 </html>
