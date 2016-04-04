@@ -24,116 +24,56 @@ limitations under the License.
   <meta name="author" content="Paul Lewis" />
   <meta name="viewport" content="width=device-width">
   <title>Infinite Scroll</title>
+  <link href='https://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
   <style>
+    html {
+      background: #eeeeee;
+    }
+
     html, body {
+      height: 100%;
       margin: 0;
       padding: 0;
-      overflow: none;
-    }
-    body {
-      background-color: #ddd;
-    }
-    #viewport {
-      overflow-x: hidden;
-      overflow-y: scroll;
-      -webkit-overflow-scrolling: touch;
-      width: 100%;
-      height: 100%;
-      position: absolute;
+      font-family: 'Roboto', sans-serif;
+      overflow: hidden;
+      -webkit-tap-highlight-color: rgba(0,0,0,0);
     }
     #templates {
       display: none;
     }
-    .message {
-      box-sizing: border-box;
-      width: 100%;
-      will-change: transform;
-      transform-origin: 0 0;
-      padding: 5px 15px;
-    }
-
-    .message .name {
-      margin-bottom: 5px;
-    }
-
-    .container {
-      background-color: white;
-      border: 2px solid gray;
-      border-radius: 5px;
-      padding: 5px;
-      /* box-shadow: 5px 5px 3px #888888; */
-    }
-
-    .message.tombstone .name {
-      width: 150px;
-      height: 5px;
-      margin-top: 10px;
-      margin-bottom: 15px;
-      background-color: gray;
-    }
-
-    .message.tombstone .text {
-      width: 300px;
-      height: 5px;
-      margin-top: 5px;
-      margin-bottom: 5px;
-      background-color: gray;
-    }
-
-    .container > img {
-      /* Don't put dynamically sized images in this. We wouldn't detect when
-       * those images have loaded. */
-      width: 200px;
-      height: 200px;
-    }
-
-    .message .hidden {
-      display: none;
-    }
   </style>
+  <link href='styles/messages.css' rel='stylesheet' type='text/css'>
 </head>
 <body>
   <div id="templates">
-    <div class="message">
-      <div class="container">
-        <div class="name"></div>
-        <div class="text"></div>
-        <img>
+    <li class="chat-item" data-id="{{id}}">
+      <img class="avatar" width="48" height="48">
+      <div class="bubble">
+        <p></p>
+        <img width="300" height="300">
+        <div class="meta">
+          <time class="posted-date"></time>
+        </div>
       </div>
-    </div>
-    <div class="message tombstone">
-      <div class="container">
-        <div class="name"></div>
-        <div class="text"></div>
-        <div class="text"></div>
-        <div class="text"></div>
-        <div class="block"></div>
+    </li>
+    <li class="chat-item tombstone" data-id="{{id}}">
+      <img class="avatar" width="48" height="48" src="images/unknown.jpg">
+      <div class="bubble">
+        <p></p>
+        <p></p>
+        <p></p>
+        <div class="meta">
+          <time class="posted-date"></time>
+        </div>
       </div>
-    </div>
+    </li>
   </div>
-  <div id="viewport">
-  </div>
+  <ul id="chat-timeline">
+  </ul>
   <script src="scripts/infinite-scroll.js"></script>
+  <script src="scripts/messages.js"></script>
   <script>
-
-var NAMES = ['Joe', 'Bob', 'Rick', 'Ian', 'Rob', 'Terry', 'Linda', 'Jill', 'Mary', 'Sandra'];
-var IMAGES = [
-    'https://i.ytimg.com/vi/tntOCGkgt98/maxresdefault.jpg',
-    'https://pbs.twimg.com/profile_images/378800000532546226/dbe5f0727b69487016ffd67a6689e75a.jpeg',
-    'http://i2.cdn.turner.com/cnnnext/dam/assets/150324154025-14-internet-cats-restricted-super-169.jpeg',
-    'http://ichef-1.bbci.co.uk/news/1024/cpsprodpb/15664/production/_86825678_cats9.png',
-    'https://pbs.twimg.com/profile_images/424484505915621376/EOwsjaMZ_400x400.png',
-    'https://media.giphy.com/media/evAe2zNwDqamA/giphy.gif',
-];
-var MESSAGES = [
-    'Having a great day!',
-    'Check out this awesome toast I\'m eating',
-    'Hang in there, you',
-    'These are great socks. They\'re not new or anything; I just cleaned them. They\'re still wet, though.',
-    'Hello, I am a Nigerian Prince...',
-    'This is a test of an infinite scroller pattern. DOM nodes should be recycled with ' +
-    'content as you scroll down the page. This longer message should serve to create a ' +
-    'taller item in the list',];
+var INIT_TIME = new Date().getTime();
 
 /**
  * Constructs a random item with a given id.
@@ -146,16 +86,19 @@ function getItem(id) {
   }
 
   return {
-      'id': id,
-      'name': pickRandom(NAMES),
-      'image': Math.random() < 1.0 / 20 ? pickRandom(IMAGES) : '',
-      'message': pickRandom(MESSAGES)};
+    id: id,
+    avatar: Math.floor(Math.random()*NUM_AVATARS),
+    self: Math.random() < 0.1,
+    image: Math.random() < 1.0 / 20 ? Math.floor(Math.random()*NUM_IMAGES) : '',
+    time: new Date(Math.floor(INIT_TIME + id*20*1000 + Math.random()*20*1000)),
+    message: pickRandom(MESSAGES)
+  };
 }
 
 function ContentSource() {
   // Collect template nodes to be cloned when needed.
-  this.tombstone_ = document.querySelector("#templates > .message.tombstone");
-  this.messageTemplate_ = document.querySelector("#templates > .message");
+  this.tombstone_ = document.querySelector("#templates > .chat-item.tombstone");
+  this.messageTemplate_ = document.querySelector("#templates > .chat-item:not(.tombstone)");
   this.nextItem_ = 0;
 }
 
@@ -171,8 +114,8 @@ ContentSource.prototype = {
           items[i] = getItem(this.nextItem_++);
         }
         resolve(items);
-      }, 1000 /* Simulated 1 second round trip time */ );
-    });
+      }.bind(this), 1000 /* Simulated 1 second round trip time */ );
+    }.bind(this));
   },
 
   createTombstone: function() {
@@ -182,23 +125,25 @@ ContentSource.prototype = {
   render: function(item, div) {
     // TODO: Different style?
     div = div || this.messageTemplate_.cloneNode(true);
-    div.querySelector('.name').textContent = item.name;
-    div.querySelector('.text').textContent = item.message;
-    var img = div.querySelector('img');
-    if (item.image) {
-      img.src = item.image;
-      img.classList.remove('hidden');
+    div.querySelector('.avatar').src = 'images/avatar' + item.avatar + '.jpg';
+    div.querySelector('.bubble p').textContent = item.message;
+    div.querySelector('.bubble .posted-date').textContent = item.time.toString();
+    if(item.image) {
+      div.querySelector('.bubble img').classList.remove('invisible');
+      div.querySelector('.bubble img').src = 'images/image' + item.image + '.jpg';
     } else {
-      img.classList.add('hidden');
+      div.querySelector('.bubble img').classList.add('invisible');
+    }
+    if(item.self) {
+      div.classList.add('from-me');
     }
     return div;
   },
 
 };
 
-
 document.addEventListener('DOMContentLoaded', function() {
-  window.scroller = new InfiniteScroller(document.getElementById('viewport'),
+  window.scroller = new InfiniteScroller(document.querySelector('#chat-timeline'),
                                          new ContentSource());
 });
   </script>

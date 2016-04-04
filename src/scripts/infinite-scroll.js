@@ -112,7 +112,7 @@ scope.InfiniteScroller.prototype = {
     var tombstone = this.source_.createTombstone();
     tombstone.style.position = 'absolute';
     this.scroller_.appendChild(tombstone);
-    tombstone.style.display = 'block';
+    tombstone.classList.remove('invisible');
     this.tombstoneSize_ = tombstone.offsetHeight;
     this.tombstoneWidth_ = tombstone.offsetWidth;
     this.scroller_.removeChild(tombstone);
@@ -202,7 +202,7 @@ scope.InfiniteScroller.prototype = {
   getTombstone: function() {
     var tombstone = this.tombstones_.pop();
     if (tombstone) {
-      tombstone.style.display = 'block';
+      tombstone.classList.remove('invisible');
       tombstone.style.opacity = 1;
       tombstone.style.transform = '';
       tombstone.style.transition = '';
@@ -230,7 +230,7 @@ scope.InfiniteScroller.prototype = {
       if (this.items_[i].node) {
         if (this.items_[i].node.classList.contains('tombstone')) {
           this.tombstones_.push(this.items_[i].node);
-          this.tombstones_[this.tombstones_.length - 1].style.display = 'none';
+          this.tombstones_[this.tombstones_.length - 1].classList.add('invisible');
         } else {
           unusedNodes.push(this.items_[i].node);
         }
@@ -252,7 +252,7 @@ scope.InfiniteScroller.prototype = {
             this.items_[i].node.style.zIndex = 1;
             tombstoneAnimations[i] = [this.items_[i].node, this.items_[i].top - this.anchorScrollTop];
           } else {
-            this.items_[i].node.style.display = 'none';
+            this.items_[i].node.classList.add('invisible');
             this.tombstones_.push(this.items_[i].node);
           }
           this.items_[i].node = null;
@@ -337,7 +337,7 @@ scope.InfiniteScroller.prototype = {
       setTimeout(function() {
         for (var i in tombstoneAnimations) {
           var anim = tombstoneAnimations[i];
-          anim[0].style.display = 'none';
+          anim[0].classList.add('invisible');
           this.tombstones_.push(anim[0]);
           // Tombstone can be recycled now.
         }
