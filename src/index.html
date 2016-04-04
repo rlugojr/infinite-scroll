@@ -85,14 +85,29 @@ function getItem(id) {
       return a[Math.floor(Math.random() * a.length)];
   }
 
-  return {
-    id: id,
-    avatar: Math.floor(Math.random()*NUM_AVATARS),
-    self: Math.random() < 0.1,
-    image: Math.random() < 1.0 / 20 ? Math.floor(Math.random()*NUM_IMAGES) : '',
-    time: new Date(Math.floor(INIT_TIME + id*20*1000 + Math.random()*20*1000)),
-    message: pickRandom(MESSAGES)
-  };
+  return new Promise(function(resolve) {
+    var item = {
+      id: id,
+      avatar: Math.floor(Math.random()*NUM_AVATARS),
+      self: Math.random() < 0.1,
+      image: Math.random() < 1.0 / 20 ? Math.floor(Math.random()*NUM_IMAGES) : '',
+      time: new Date(Math.floor(INIT_TIME + id*20*1000 + Math.random()*20*1000)),
+      message: pickRandom(MESSAGES)
+    }
+    if(item.image === '') {
+      resolve(item);
+    }
+    var image = new Image();
+    image.src = 'images/image' + item.image + '.jpg';
+    image.addEventListener('load', function() {
+      item.image = image;
+      resolve(item);
+    });
+    image.addEventListener('error', function() {
+      item.image = '';
+      resolve(item);
+    });
+  });
 }
 
 function ContentSource() {
@@ -113,7 +128,7 @@ ContentSource.prototype = {
         for (var i = 0; i < Math.abs(count); i++) {
           items[i] = getItem(this.nextItem_++);
         }
-        resolve(items);
+        resolve(Promise.all(items));
       }.bind(this), 1000 /* Simulated 1 second round trip time */ );
     }.bind(this));
   },
@@ -128,12 +143,18 @@ ContentSource.prototype = {
     div.querySelector('.avatar').src = 'images/avatar' + item.avatar + '.jpg';
     div.querySelector('.bubble p').textContent = item.message;
     div.querySelector('.bubble .posted-date').textContent = item.time.toString();
-    if(item.image) {
-      div.querySelector('.bubble img').classList.remove('invisible');
-      div.querySelector('.bubble img').src = 'images/image' + item.image + '.jpg';
+
+    var img = div.querySelector('.bubble img');
+    if(item.image !== '') {
+      img.classList.remove('invisible');
+      img.src = item.image.src;
+      img.width = item.image.width;
+      img.height = item.image.height;
     } else {
-      div.querySelector('.bubble img').classList.add('invisible');
+      img.src = '';
+      img.classList.add('invisible');
     }
+
     if(item.self) {
       div.classList.add('from-me');
     } else {
