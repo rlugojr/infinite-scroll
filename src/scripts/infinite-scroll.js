@@ -394,18 +394,4 @@ scope.InfiniteScroller.prototype = {
     this.attachContent();
   }
 }
-
-// Minimal Promise implementation for browsers which do not have promises.
-window.Promise = window.Promise || function(exec) {
-  var then = undefined;
-  var resolve = function() {
-    if (!then)
-      throw new Error('No function specified to call on success.');
-    then.apply(null, arguments);
-  }.bind(this);
-  var reject = function(e) { throw e; };
-  this.then = function(fn) { then = fn; };
-  exec(resolve, reject);
-};
-
 })(self);
