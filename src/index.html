@@ -71,6 +71,7 @@ limitations under the License.
   <ul id="chat-timeline">
   </ul>
   <script src="es6-promise.js"></script>
+  <script src="stats.min.js"></script>
   <script src="scripts/infinite-scroll.js"></script>
   <script src="scripts/messages.js"></script>
   <script>
@@ -141,6 +142,7 @@ ContentSource.prototype = {
   render: function(item, div) {
     // TODO: Different style?
     div = div || this.messageTemplate_.cloneNode(true);
+    div.dataset.id = item.id;
     div.querySelector('.avatar').src = 'images/avatar' + item.avatar + '.jpg';
     div.querySelector('.bubble p').textContent = item.message;
     div.querySelector('.bubble .posted-date').textContent = item.time.toString();
@@ -166,9 +168,30 @@ ContentSource.prototype = {
 
 };
 
+function numDomNodes(node) {
+  if(!node.children || node.children.length == 0)
+    return 0;
+  var childrenCount = Array.from(node.children).map(numDomNodes);
+  return node.children.length + childrenCount.reduce((p, c) => p + c, 0);
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-  window.scroller = new InfiniteScroller(document.querySelector('#chat-timeline'),
-                                         new ContentSource());
+  window.scroller =
+    new InfiniteScroller(
+      document.querySelector('#chat-timeline'),
+      new ContentSource()
+    );
+
+  var stats = new Stats();
+  var domPanel = new Stats.Panel('DOM Nodes', '#0ff', '#002');
+  stats.addPanel(domPanel);
+  stats.showPanel(3);
+  document.body.appendChild(stats.dom);
+  setInterval(function() {
+    domPanel.update(numDomNodes(document.body), 1500);
+  }, 100);
+
+
 });
   </script>
 </body>
