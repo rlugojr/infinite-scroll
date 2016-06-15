@@ -98,6 +98,7 @@ function getItem(id) {
     }
     if(item.image === '') {
       resolve(item);
+      return;
     }
     var image = new Image();
     image.src = 'images/image' + item.image + '.jpg';
